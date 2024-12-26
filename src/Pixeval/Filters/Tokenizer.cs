@@ -6,106 +6,151 @@ namespace Pixeval.Filters;
 public static class Tokenizer
 {
     /// <summary>
-    /// Tokenize function for tag parser, this function need to be reworked for performance in the future.
+    /// Tokenize function for tag parser, optimized for performance.
     /// Returns a flow of tokenized nodes carrying data of the input string, structured.
     /// </summary>
     /// <param name="src"></param>
     /// <returns></returns>
-    public static IList<IQueryToken> Tokenize(string src) => src switch
+    public static IList<IQueryToken> Tokenize(string src)
     {
-        [] => [],
-        ['+', .. var rem] => Tokenize(rem).Prepend(new IQueryToken.Plus()),
-        ['-', .. var rem] => Tokenize(rem).Prepend(new IQueryToken.Dash()),
-        ['.', .. var rem] => Tokenize(rem).Prepend(new IQueryToken.Dot()),
-        ['@', .. var rem] => Tokenize(rem).Prepend(new IQueryToken.At()),
-        ['/', .. var rem] => Tokenize(rem).Prepend(new IQueryToken.Slash()),
-        [':', .. var rem] => Tokenize(rem).Prepend(new IQueryToken.Colon()),
-        [',', .. var rem] => Tokenize(rem).Prepend(new IQueryToken.Comma()),
-        ['(', .. var rem] => Tokenize(rem).Prepend(new IQueryToken.LeftParen()),
-        ['[', .. var rem] => Tokenize(rem).Prepend(new IQueryToken.LeftBracket()),
-        [')', .. var rem] => Tokenize(rem).Prepend(new IQueryToken.RightParen()),
-        [']', .. var rem] => Tokenize(rem).Prepend(new IQueryToken.RightBracket()),
-        ['#', .. var rem] => Tokenize(rem).Prepend(new IQueryToken.Hashtag()),
-        ['!', .. var rem] => Tokenize(rem).Prepend(new IQueryToken.Not()),
-        ['l', ':', .. var rem] => Tokenize(rem).Prepend(new IQueryToken.Colon()).Prepend(new IQueryToken.Like()),
-        ['i', ':', .. var rem] => Tokenize(rem).Prepend(new IQueryToken.Colon()).Prepend(new IQueryToken.Index()),
-        ['s', ':', .. var rem] => Tokenize(rem).Prepend(new IQueryToken.Colon()).Prepend(new IQueryToken.StartDate()),
-        ['e', ':', .. var rem] => Tokenize(rem).Prepend(new IQueryToken.Colon()).Prepend(new IQueryToken.EndDate()),
-        ['r', ':', .. var rem] => Tokenize(rem).Prepend(new IQueryToken.Colon()).Prepend(new IQueryToken.Ratio()),
-        ['a', 'n', 'd', .. var rem] => Tokenize(rem).Prepend(new IQueryToken.And()),
-        ['o', 'r', .. var rem] => Tokenize(rem).Prepend(new IQueryToken.Or()),
-        ['"', .. var rem] => TokenizeAndPrepend(rem, t => t.IndexOf('"'), 1),
-        [var x, ..] when char.IsWhiteSpace(x) => TokenizeAndSkip(src, char.IsWhiteSpace),
-        [var x, ..] when char.IsDigit(x) => TokenizeNumeric(src),
-        _ => TokenizeAndPrepend(src, EatDataPredicate)
-    };
+        var tokens = new List<IQueryToken>();
+        var index = 0;
 
-    private static bool EatDataPredicate(char ch)
-    {
-        return ch is ']' or ')' || char.IsWhiteSpace(ch);
-    }
-
-    public static IList<IQueryToken> TokenizeNumeric(string src)
-    {
-        var isData = false;
-        for (var i = 0; i < src.Length; ++i)
+        while (index < src.Length)
         {
-            var c = src[i];
-            if (c is '-' or '.' or ',' or ']' or ')' || char.IsWhiteSpace(c))
-                return Tokenize(src[i..]).Prepend(isData
-                    ? new IQueryToken.Data(src[..i])
-                    : new IQueryToken.Numeric(long.Parse(src[..i])));
-            if (!char.IsDigit(c))
-                isData = true;
+            switch (src[index])
+            {
+                case '+':
+                    tokens.Add(new IQueryToken.Plus());
+                    index++;
+                    break;
+                case '-':
+                    tokens.Add(new IQueryToken.Dash());
+                    index++;
+                    break;
+                case '.':
+                    tokens.Add(new IQueryToken.Dot());
+                    index++;
+                    break;
+                case '@':
+                    tokens.Add(new IQueryToken.At());
+                    index++;
+                    break;
+                case '/':
+                    tokens.Add(new IQueryToken.Slash());
+                    index++;
+                    break;
+                case ':':
+                    tokens.Add(new IQueryToken.Colon());
+                    index++;
+                    if (index < src.Length)
+                    {
+                        switch (src[index])
+                        {
+                            case 'l':
+                                tokens.Add(new IQueryToken.Like());
+                                index++;
+                                break;
+                            case 'i':
+                                tokens.Add(new IQueryToken.Index());
+                                index++;
+                                break;
+                            case 's':
+                                tokens.Add(new IQueryToken.StartDate());
+                                index++;
+                                break;
+                            case 'e':
+                                tokens.Add(new IQueryToken.EndDate());
+                                index++;
+                                break;
+                            case 'r':
+                                tokens.Add(new IQueryToken.Ratio());
+                                index++;
+                                break;
+                        }
+                    }
+                    break;
+                case ',':
+                    tokens.Add(new IQueryToken.Comma());
+                    index++;
+                    break;
+                case '(':
+                    tokens.Add(new IQueryToken.LeftParen());
+                    index++;
+                    break;
+                case '[':
+                    tokens.Add(new IQueryToken.LeftBracket());
+                    index++;
+                    break;
+                case ')':
+                    tokens.Add(new IQueryToken.RightParen());
+                    index++;
+                    break;
+                case ']':
+                    tokens.Add(new IQueryToken.RightBracket());
+                    index++;
+                    break;
+                case '#':
+                    tokens.Add(new IQueryToken.Hashtag());
+                    index++;
+                    break;
+                case '!':
+                    tokens.Add(new IQueryToken.Not());
+                    index++;
+                    break;
+                case 'a':
+                    if (src.Substring(index, 3) == "and")
+                    {
+                        tokens.Add(new IQueryToken.And());
+                        index += 3;
+                    }
+                    break;
+                case 'o':
+                    if (src.Substring(index, 2) == "or")
+                    {
+                        tokens.Add(new IQueryToken.Or());
+                        index += 2;
+                    }
+                    break;
+                case '\"':
+                    var endIndex = src.IndexOf('\"', index + 1);
+                    if (endIndex != -1)
+                    {
+                        tokens.Add(new IQueryToken.Data(src.Substring(index + 1, endIndex - index - 1)));
+                        index = endIndex + 1;
+                    }
+                    else
+                    {
+                        index = src.Length;
+                    }
+                    break;
+                default:
+                    if (char.IsWhiteSpace(src[index]))
+                    {
+                        index++;
+                    }
+                    else if (char.IsDigit(src[index]))
+                    {
+                        var startIndex = index;
+                        while (index < src.Length && char.IsDigit(src[index]))
+                        {
+                            index++;
+                        }
+                        tokens.Add(new IQueryToken.Number(src.Substring(startIndex, index - startIndex)));
+                    }
+                    else
+                    {
+                        var startIndex = index;
+                        while (index < src.Length && !char.IsWhiteSpace(src[index]) && src[index] != '\"')
+                        {
+                            index++;
+                        }
+                        tokens.Add(new IQueryToken.Data(src.Substring(startIndex, index - startIndex)));
+                    }
+                    break;
+            }
         }
 
-        return Tokenize("").Prepend(isData
-            ? new IQueryToken.Data(src)
-            : new IQueryToken.Numeric(long.Parse(src)));
-    }
-
-    private static IList<IQueryToken> TokenizeAndPrepend(string src, Func<string, int> indexOf, int offset = 0)
-    {
-        var index = indexOf(src);
-        return Tokenize(src[(index + offset)..])
-            .Prepend(new IQueryToken.Data(src[..index]));
-    }
-
-    private static IList<IQueryToken> TokenizeAndPrepend(string src, Func<char, bool> predicate, int offset = 0)
-    {
-        for (var i = 0; i < src.Length; ++i)
-        {
-            if (predicate(src[i]))
-                return Tokenize(src[(i + offset)..])
-                    .Prepend(new IQueryToken.Data(src[..i]));
-        }
-
-        return Tokenize("").Prepend(new IQueryToken.Data(src));
-    }
-
-    private static IList<IQueryToken> TokenizeAndSkip(string src, Func<char, bool> predicate, int offset = 0)
-    {
-        for (var i = 0; i < src.Length; ++i)
-        {
-            if (!predicate(src[i]))
-                return Tokenize(src[(i + offset)..]);
-        }
-        return Tokenize("");
-    }
-
-    private static IList<IQueryToken> Prepend(this IList<IQueryToken> source,
-        IQueryToken element)
-    {
-        source.Insert(0, element);
-        return source;
-    }
-
-    private static IList<IQueryToken> Prepend(this IList<IQueryToken> source,
-        IQueryToken.INullableToken element)
-    {
-        if (element.IsNotEmpty())
-            source.Insert(0, element);
-        return source;
+        return tokens;
     }
 }
-
