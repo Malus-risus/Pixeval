@@ -9,7 +9,6 @@ public static class Tokenizer
     /// Tokenize function for tag parser, optimized for performance.
     /// Returns a flow of tokenized nodes carrying data of the input string, structured.
     /// </summary>
-    /// <param name="src"></param>
     /// <returns></returns>
     public static IList<IQueryToken> Tokenize(string src)
     {
