@@ -1,6 +1,5 @@
 #region Copyright (c) Pixeval/Pixeval
 // GPL v3 License
-// 
 // Pixeval/Pixeval
 // Copyright (c) 2023 Pixeval/IOHelper.Download.cs
 // 
