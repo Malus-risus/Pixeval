@@ -1,4 +1,3 @@
-#region Copyright (c) Pixeval/Pixeval
 // GPL v3 License
 // 
 // Pixeval/Pixeval
@@ -139,13 +138,6 @@ public sealed partial class MainPage
         }
 
         _lastSelected = sender.SelectedItem as NavigationViewItem;
-    }
-
-    private void MainPageRootFrame_OnNavigated(object sender, NavigationEventArgs e)
-    {
-        GCSettings.LargeObjectHeapCompactionMode = GCLargeObjectHeapCompactionMode.CompactOnce;
-        GC.Collect();
-        // sender.To<Frame>().BackStack.Clear();
     }
 
     private async void KeywordAutoSuggestBox_GotFocus(object sender, RoutedEventArgs e)
@@ -335,7 +327,7 @@ public sealed partial class MainPage
 
     private async Task ShowReverseSearchApiKeyNotPresentDialog()
     {
-        var result = await this.CreateOkCancelAsync(MainPageResources.ReverseSearchApiKeyNotPresentTitle, ReverseSearchApiKeyNotPresentDialogResources.MessageTextBlockText, ReverseSearchApiKeyNotPresentDialogResources.SetApiKeyHyperlinkButtonContent);
+        var result = await this.CreateOkCancelAsync(MainPageResources.ReverseSearchApiKeyNotPresentTitle, ReverseSearchApiKeyNotPresentDialogResources.MessageTextBlockText, ReverseSearchApiKeyNotPresentDialogResources.OkButtonText);
         if (result is ContentDialogResult.Primary)
         {
             await NavigateToSettingEntryAsync(ReverseSearchApiKeyAttribute.Value);
